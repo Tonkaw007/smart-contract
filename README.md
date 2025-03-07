@@ -1,77 +1,53 @@
 ### อธิบายโค้ดที่ป้องกันการ lock เงินไว้ใน contract
-โดยใช้ 3 ฟังก์ชันหลัก คือ function _checkWinnerAndPay(), function refund() และ function withdraw()
+โดยใช้ 3 ฟังก์ชันหลัก คือ function _checkWinnerAndPay() , function checkTimeout() และ function resetGame()
 1. function _checkWinnerAndPay()
-ตัดสินผู้ชนะและโอนเงินรางวัลให้ทันที หลังจากที่ทั้งสองฝ่ายเปิดเผยตัวเลือกครบ ซึ่งทำการตรวจสอบตัวเลือกของทั้งสองฝ่ายและเปรียบเทียบว่าใครเป็นผู้ชนะตามกติกา Rock-Paper-Scissors-Lizard-Spock (5 choice)
-ถ้ามีผู้ชนะ จะโอนเงินรางวัลทั้งหมดไปยังผู้ชนะ
-แต่ถ้าเสมอกัน เงินรางวัลจะถูกแบ่งคนละครึ่ง
-หลังจากจบเกม จะเรียก function _resetGame() เพื่อล้างข้อมูลเก่าและเริ่มรอบใหม่
+ทำหน้าที่ตัดสินผู้ชนะและโอนเงินรางวัลให้ทันที หลังจากที่ทั้งสองฝ่ายเปิดเผยตัวเลือกครบถ้วน
+- ดึงตัวเลือกของผู้เล่นจาก mapping player_choice
+- ตรวจสอบผลแพ้-ชนะ ใช้เงื่อนไขของเกม Rock-Paper-Scissors-Lizard-Spock (RPSLS) เพื่อตัดสินผล
+- รีเซ็ตเกม เรียก resetGame() เพื่อล้างข้อมูลเก่าและเริ่มรอบใหม่
 
-2. function refund()
-คืนเงินให้กับผู้เล่นหากมีแค่คนเดียวเข้าร่วมเกม แล้วไม่มีใครมาเป็นผู้เล่นที่สองภายในเวลาที่กำหนด ซึ่งทำการตรวจสอบว่ามีผู้เล่นแค่คนเดียว (numPlayer == 1)
-และก็ตรวจสอบว่าเลยกำหนดเวลาสำหรับการส่งค่า commit (block.timestamp > commitDeadline) ของผู้เล่นคนที่สอง ก็จะโอนเงินรางวัลกลับไปให้ผู้เล่นคนเดียวที่เข้าร่วม
-และรีเซ็ตเกมเพื่อล้างข้อมูลและเตรียมเกมใหม่
+2. function checkTimeout()
+ทำหน้าที่คืนเงินให้ผู้เล่นหากเกิด timeout เช่น ผู้เล่นไม่ส่ง input ภายในเวลาที่กำหนด
+- ตรวจสอบเงื่อนไข timeout โดยตรวจสอบว่าเกมมีผู้เล่น 2 คนและเวลา timeout เกิดขึ้นแล้ว
+- คืนเงินให้ผู้เล่น หากมีผู้เล่นเพียงคนเดียวที่ส่ง input หรือไม่มีใครส่งเลย ระบบจะคืนเงินครึ่งหนึ่งให้ทั้งสองผู้เล่น
+- รีเซ็ตเกม เรียก resetGame() เพื่อล้างข้อมูลเก่าและเริ่มรอบใหม่
 
-3. function withdraw()
-อนุญาตให้ผู้เล่นสามารถถอนเงินได้หากเกมค้างหรือมีความล่าช้า ซึ่งทำการตรวจสอบว่ามีผู้เล่นครบ 2 คน (numPlayer == 2)
-แล้วก็ตรวจสอบว่าเวลาผ่านไปเกิน 2 นาทีแล้ว (timeUnit.elapsedSeconds() > 120)
-อนุญาตให้ผู้เล่นถอนเงินของตัวเองครึ่งหนึ่งออกมาได้ (reward / 2)  เพื่อป้องกันการล็อกเงินไว้ใน contract
+3. function resetGame()
+ทำหน้าที่รีเซ็ตสถานะของเกมหลังจากจบเกมหรือเกิด timeout
+- ลบข้อมูลผู้เล่นจาก mapping player_choice, player_not_played, และ player_commitment
 
 ### อธิบายโค้ดส่วนที่ทำการซ่อน choice และ commit
-ใช้ function commitMove(bytes32 dataHash)
-เพื่อให้ผู้เล่นทำการ commit ค่าเลือกของตัวเอง โดยแฮชค่าที่เลือกและรหัสลับ (secret) ก่อน แล้วส่งมาเป็นค่า dataHash
-โดยกำหนดให้ต้องมีผู้เล่นครบ 2 คน (numPlayer == 2), ต้องอยู่ในช่วงเวลาที่กำหนด (block.timestamp <= commitDeadline)
-, ต้องยังไม่ได้ commit มาก่อน (player_not_played[msg.sender])
-แล้วก็ทำการ commit ค่าแฮช โดยเรียก commitReveal.commit(dataHash)
-และเก็บค่า commit ไว้ใน player_commit[msg.sender]
-ซึ่งยังไม่มีใครรู้ว่าเลือกอะไรไป จนกว่าจะ reveal
+โค้ดนี้ใช้กลไก commit-reveal scheme เพื่อป้องกันการโกง (front-running) โดยใช้ฟังก์ชัน commitChoice และ input
+1. function commitChoice(bytes32 commitmentHash)
+ทำหน้าที่รับ commitmentHash จากผู้เล่นเพื่อซ่อนการเลือก
+- ตรวจสอบว่ามีผู้เล่น 2 คนและผู้เล่นยังไม่ได้ส่ง commitmentHash มาก่อน
+- บันทึก commitmentHash ไว้ใน mapping player_commitment
+- อัปเดตสถานะผู้เล่น โดยตั้งค่าสถานะว่าผู้เล่นนี้ส่ง commitmentHash แล้ว
+
+2. function input(uint choice, string memory randomString)
+ทำหน้าที่เปิดเผยการเลือกของผู้เล่น
+- ตรวจสอบเงื่อนไขว่ามีผู้เล่น 2 คนและผู้เล่นยังไม่ได้ส่ง input มาก่อน
+- ตรวจสอบ commitmentHash โดยคำนวณ commitmentHash ใหม่จาก choice และ randomString แล้วก็เปรียบเทียบกับ commitmentHash ที่บันทึกไว้
+- บันทึกการเลือกของผู้เล่นใน mapping player_choice
+- ตรวจสอบว่าทั้งสองฝ่ายส่ง input ครบ หากทั้งสองฝ่ายส่ง input ครบ ระบบจะเรียก _checkWinnerAndPay() เพื่อตัดสินผลแพ้-ชนะ
 
 ### อธิบายโค้ดส่วนที่จัดการกับความล่าช้าที่ผู้เล่นไม่ครบทั้งสองคนเสียที
-โดยใช้ 2 ฟังก์ชัน คือ function refund() และ function withdraw() ในการช่วยแก้ปัญหา
-1. function refund()
-คืนเงินให้กับผู้เล่นหากมีแค่คนเดียวเข้าร่วมเกม แล้วไม่มีใครมาเป็นผู้เล่นที่สองภายในเวลาที่กำหนด ซึ่งทำการตรวจสอบว่ามีผู้เล่นแค่คนเดียว (numPlayer == 1)
-และก็ตรวจสอบว่าเลยกำหนดเวลาสำหรับการส่งค่า commit (block.timestamp > commitDeadline) ของผู้เล่นคนที่สอง ก็จะโอนเงินรางวัลกลับไปให้ผู้เล่นคนเดียวที่เข้าร่วม
-และรีเซ็ตเกมเพื่อล้างข้อมูลและเตรียมเกมใหม่
-
-2. function withdraw()
-อนุญาตให้ผู้เล่นสามารถถอนเงินได้หากเกมค้างหรือมีความล่าช้า ซึ่งทำการตรวจสอบว่ามีผู้เล่นครบ 2 คน (numPlayer == 2)
-แล้วก็ตรวจสอบว่าเวลาผ่านไปเกิน 5 นาทีแล้ว (timeUnit.elapsedSeconds() > 300)
-อนุญาตให้ผู้เล่นถอนเงินของตัวเองครึ่งหนึ่งออกมาได้ (reward / 2) 
+ใช้ function checkTimeout() ทำหน้าที่คืนเงินให้ผู้เล่นหากเกิด timeout
+- ตรวจสอบเงื่อนไข timeout ว่าเกมมีผู้เล่น 2 คนและเวลา timeout เกิดขึ้นแล้ว
+- คืนเงินให้ผู้เล่น หากมีผู้เล่นเพียงคนเดียวที่ส่ง input หรือไม่มีใครส่งเลย ระบบจะคืนเงินครึ่งหนึ่งให้ทั้งสองผู้เล่น
+- รีเซ็ตเกม เรียก resetGame() เพื่อล้างข้อมูลเก่าและเริ่มรอบใหม่
 
 ### อธิบายโค้ดส่วนทำการ reveal และนำ choice มาตัดสินผู้ชนะ 
-โดยใช้ 2 ฟังก์ชัน คือ  function revealMove(string memory choice, string memory secret) และ function _checkWinnerAndPay()
-
-1. function revealMove(string memory choice, string memory secret)
-ใช้เปิดเผยค่าเลือกของผู้เล่น โดยตรวจสอบว่าแฮชของ (choice, secret) ตรงกับค่า commitMove() ที่ส่งมาก่อนหน้านี้หรือไม่
-โดยกำหนดให้ต้องมีผู้เล่นครบ 2 คน (numPlayer == 2), ต้องอยู่ในช่วงเวลาที่กำหนด
-- block.timestamp > commitDeadline → หมดช่วง commit
-- block.timestamp <= revealDeadline → ยังอยู่ในช่วง reveal
-แล้วก็ตรวจสอบว่าค่า reveal ตรงกับ commit 
-โดยสร้างค่าแฮช revealHash = keccak256(abi.encodePacked(choice, secret))
-และเรียก commitReveal.reveal(revealHash) เพื่อตรวจสอบ
-แล้วก็บันทึกตัวเลือกของผู้เล่น (player_choice[msg.sender] = getChoice(choice))
-และอัปเดตสถานะว่าได้ reveal แล้ว (player_not_played[msg.sender] = false)
-ถ้าทั้งสองคน reveal ครบ (numInput == 2) ก็จะสามารถตัดสินผลลัพธ์ได้ (function _checkWinnerAndPay())
+โดยใช้ 3 ฟังก์ชันหลัก คือ function input(uint choice, string memory randomString) และ function _checkWinnerAndPay()
+1. function input(uint choice, string memory randomString)
+ทำหน้าที่เปิดเผยการเลือกของผู้เล่น
+- ตรวจสอบเงื่อนไขว่ามีผู้เล่น 2 คนและผู้เล่นยังไม่ได้ส่ง input มาก่อน
+- ตรวจสอบ commitmentHash โดยคำนวณ commitmentHash ใหม่จาก choice และ randomString แล้วก็เปรียบเทียบกับ commitmentHash ที่บันทึกไว้
+- บันทึกการเลือกของผู้เล่นใน mapping player_choice
+- ตรวจสอบว่าทั้งสองฝ่ายส่ง input ครบ หากทั้งสองฝ่ายส่ง input ครบ ระบบจะเรียก _checkWinnerAndPay() เพื่อตัดสินผลแพ้-ชนะ
 
 2. function _checkWinnerAndPay()
-ทำหน้าที่ ตรวจสอบผลแพ้ชนะและแจกจ่ายรางวัล ให้กับผู้ชนะหรือแบ่งรางวัลหากเสมอกัน
-- ดึงค่าตัวเลือกของผู้เล่นจาก mapping player_choice
-p0Choice = player_choice[players[0]];
-p1Choice = player_choice[players[1]];
-
-- กำหนดที่อยู่ของผู้เล่น
-account0 = payable(players[0]);
-account1 = payable(players[1]);
-ใช้ payable เพื่อเตรียมโอน ETH ให้กับผู้เล่น
-
-- ตรวจสอบผลแพ้ชนะ โดยใช้เงื่อนไข (p0Choice + 1) % 5 == p1Choice || (p0Choice + 3) % 5 == p1Choice
-ระบบจะตรวจสอบว่าผู้เล่นที่สอง (p1Choice) ชนะ หรือไม่ ถ้าชนะก็โอน reward ให้ account1
-ถ้า (p1Choice + 1) % 5 == p0Choice || (p1Choice + 3) % 5 == p0Choice เป็นจริง แสดงว่าผู้เล่นที่หนึ่ง (p0Choice) ชนะ และรับรางวัล
-
-- กรณีเสมอกัน
-ถ้าทั้งสองตัวเลือกไม่เข้าเงื่อนไขแพ้ชนะ ระบบจะแบ่งเงินรางวัล คนละครึ่ง
-account0.transfer(reward / 2);
-account1.transfer(reward / 2);
-
-- รีเซ็ตเกม
-_resetGame();
-คืนค่าตัวแปรของเกมทั้งหมดเพื่อให้เริ่มรอบใหม่ได้
+ทำหน้าที่ตัดสินผู้ชนะและโอนเงินรางวัลให้ทันที หลังจากที่ทั้งสองฝ่ายเปิดเผยตัวเลือกครบถ้วน
+- ดึงตัวเลือกของผู้เล่นจาก mapping player_choice
+- ตรวจสอบผลแพ้-ชนะ ใช้เงื่อนไขของเกม Rock-Paper-Scissors-Lizard-Spock (RPSLS) เพื่อตัดสินผล
+- รีเซ็ตเกม เรียก resetGame() เพื่อล้างข้อมูลเก่าและเริ่มรอบใหม่
