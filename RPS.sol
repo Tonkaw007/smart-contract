@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity >=0.7.0 <0.9.0;
 
 import "./CommitReveal.sol";
@@ -8,68 +7,65 @@ import "./TimeUnit.sol";
 contract RPS {
     uint public numPlayer = 0;
     uint public reward = 0;
-    mapping(address => bytes32) public player_commit;
+    uint public gameStartTime;
+    uint public gameTimeout = 3 minutes; // เวลาที่ผู้เล่นต้องเลือกก่อนจะล๊อกเงิน
+    mapping(address => uint) public player_choice; // 0 - Rock, 1 - Paper, 2 - Scissors, 3 - Lizard, 4 - Spock
     mapping(address => bool) public player_not_played;
-    mapping(address => uint) public player_choice;
+    mapping(address => bytes32) public player_commitment;
     address[] public players;
+
     uint public numInput = 0;
-    mapping(address => bool) public isWhitelisted;
 
-    CommitReveal public commitReveal;
-    TimeUnit public timeUnit;
+    // เปลี่ยน allowedPlayers เป็น private
+    address[4] private allowedPlayers = [
+        0x5B38Da6a701c568545dCfcB03FcB875f56beddC4,
+        0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2,
+        0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db,
+        0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB
+    ];
 
-    uint public commitDeadline;
-    uint public revealDeadline;
-
-    constructor(address _commitReveal, address _timeUnit) {
-        commitReveal = CommitReveal(_commitReveal);
-        timeUnit = TimeUnit(_timeUnit);
-
-        isWhitelisted[0x5B38Da6a701c568545dCfcB03FcB875f56beddC4] = true;
-        isWhitelisted[0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2] = true;
-        isWhitelisted[0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db] = true;
-        isWhitelisted[0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB] = true;
+    function isAllowedPlayer(address player) internal view returns (bool) {
+        for (uint i = 0; i < allowedPlayers.length; i++) {
+            if (allowedPlayers[i] == player) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function addPlayer() public payable {
-        require(isWhitelisted[msg.sender], "You are not allowed to play.");
-        require(numPlayer < 2, "Already two players");
-        require(msg.value == 1 ether, "Must send 1 ETH");
-
+        require(numPlayer < 2, "Maximum two players are allowed");
+        require(isAllowedPlayer(msg.sender), "Player is not allowed to play");
         if (numPlayer > 0) {
-            require(msg.sender != players[0], "Player already joined");
+            require(msg.sender != players[0], "Player 1 is already in the game");
         }
-        
+        require(msg.value == 1 ether, "You must stake 1 ether to play");
         reward += msg.value;
         player_not_played[msg.sender] = true;
         players.push(msg.sender);
         numPlayer++;
-
-        if (numPlayer == 1) {
-            commitDeadline = block.timestamp + 5 minutes;
-        } else if (numPlayer == 2) {
-            revealDeadline = commitDeadline + 5 minutes;
+        // Set game start time only when both players are added
+        if (numPlayer == 2) {
+            gameStartTime = block.timestamp;
         }
     }
 
-    function commitMove(bytes32 dataHash) public {
-        require(numPlayer == 2, "Must have exactly 2 players");
-        require(block.timestamp <= commitDeadline, "Commit phase has ended");
+    function commitChoice(bytes32 commitmentHash) public {
+        require(numPlayer == 2, "Two players are required to start the game");
         require(player_not_played[msg.sender], "Player has already committed");
-
-        commitReveal.commit(dataHash);
-        player_commit[msg.sender] = dataHash;
-    }
-\\แก้
-    function revealMove(string memory choice, string memory secret) public {
-        require(numPlayer == 2, "Must have exactly 2 players");
-        require(block.timestamp > commitDeadline, "Commit phase still active");
-        require(block.timestamp <= revealDeadline, "Reveal phase has ended");
-
-        bytes32 revealHash = keccak256(abi.encodePacked(choice, secret));
-        commitReveal.reveal(revealHash);
-        player_choice[msg.sender] = getChoice(choice);
+        player_commitment[msg.sender] = commitmentHash;
         player_not_played[msg.sender] = false;
+    }
+
+    function input(uint choice, string memory randomString) public {
+        require(numPlayer == 2, "Two players are required to start the game");
+        require(!player_not_played[msg.sender], "Player has not committed yet");
+        require(choice >= 0 && choice <= 4, "Invalid choice (0-4 expected)");
+        
+        bytes32 commitmentHash = keccak256(abi.encodePacked(randomString, choice));
+        require(commitmentHash == player_commitment[msg.sender], "Commitment hash does not match");
+
+        player_choice[msg.sender] = choice;
         numInput++;
 
         if (numInput == 2) {
@@ -83,55 +79,60 @@ contract RPS {
         address payable account0 = payable(players[0]);
         address payable account1 = payable(players[1]);
 
+        // ตรวจสอบผลลัพธ์ของเกม RPSLS
         if ((p0Choice + 1) % 5 == p1Choice || (p0Choice + 3) % 5 == p1Choice) {
-            account1.transfer(reward);
+            // Player 1 ชนะ
+            (bool success1, ) = account1.call{value: reward}("");
+            require(success1, "Transfer failed");
         } else if ((p1Choice + 1) % 5 == p0Choice || (p1Choice + 3) % 5 == p0Choice) {
-            account0.transfer(reward);
+            // Player 0 ชนะ
+            (bool success0, ) = account0.call{value: reward}("");
+            require(success0, "Transfer failed");
         } else {
-            account0.transfer(reward / 2);
-            account1.transfer(reward / 2);
+            // เสมอ, แบ่งเงินรางวัล
+            uint halfReward = reward / 2;
+            (bool success0, ) = account0.call{value: halfReward}("");
+            (bool success1, ) = account1.call{value: reward - halfReward}("");
+            require(success0 && success1, "Transfer failed");
         }
-        _resetGame();
+
+        // รีเซ็ตเกม
+        resetGame();
     }
 
-    function refund() public {
-        require(numPlayer == 1, "Refund only if Player 1 is absent");
-        require(block.timestamp > commitDeadline, "Wait until commit phase ends");
+    function checkTimeout() public {
+        require(numPlayer == 2, "Game must have two players");
+        require(gameStartTime != 0, "Game has not started yet");
+        require(block.timestamp >= gameStartTime + gameTimeout, "Game timeout has not yet occurred");
+        
+        address payable account0 = payable(players[0]);
+        address payable account1 = payable(players[1]);
 
-        address payable player1 = payable(players[0]);
-        player1.transfer(reward);
-        _resetGame();
-    }
-
-    function withdraw() external {
-        require(numPlayer == 2, "Game not started");
-        require(timeUnit.elapsedSeconds() > 300, "Wait at least 5 minutes");
-        payable(msg.sender).transfer(reward / 2);
-    }
-
-    function getChoice(string memory choice) private pure returns (uint) {
-        if (keccak256(abi.encodePacked(choice)) == keccak256(abi.encodePacked("rock"))) {
-            return 0;
-        } else if (keccak256(abi.encodePacked(choice)) == keccak256(abi.encodePacked("paper"))) {
-            return 1;
-        } else if (keccak256(abi.encodePacked(choice)) == keccak256(abi.encodePacked("scissors"))) {
-            return 2;
-        } else if (keccak256(abi.encodePacked(choice)) == keccak256(abi.encodePacked("lizard"))) {
-            return 3;
-        } else if (keccak256(abi.encodePacked(choice)) == keccak256(abi.encodePacked("spock"))) {
-            return 4;
+        uint halfReward = reward / 2;
+        if (numInput == 1 || numInput == 0) {
+            // คืนเงินครึ่งหนึ่งให้ทั้งสองผู้เล่น
+            (bool success0, ) = account0.call{value: halfReward}("");
+            (bool success1, ) = account1.call{value: reward - halfReward}("");
+            require(success0 && success1, "Transfer failed");
         }
-        return 0;
+
+        // รีเซ็ตสถานะของเกมหลังจากคืนเงิน
+        resetGame();
     }
 
-    function _resetGame() private {
-        delete players;
+    function resetGame() private {
+        // รีเซ็ตสถานะผู้เล่น
+        for (uint i = 0; i < players.length; i++) {
+            delete player_choice[players[i]];
+            delete player_not_played[players[i]];
+            delete player_commitment[players[i]];
+        }
+
+        // รีเซ็ตตัวแปรสถานะ
         numPlayer = 0;
-        numInput = 0;
         reward = 0;
-        delete player_commit[players[0]];
-        delete player_commit[players[1]];
-        delete player_not_played[players[0]];
-        delete player_not_played[players[1]];
+        numInput = 0;
+        gameStartTime = 0;
+        players = new address[](0); // รีเซ็ต array players
     }
 }
