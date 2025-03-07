@@ -1,4 +1,4 @@
-# อธิบายโค้ดที่ป้องกันการ lock เงินไว้ใน contract
+#### อธิบายโค้ดที่ป้องกันการ lock เงินไว้ใน contract
 โดยใช้ 3 ฟังก์ชันหลัก ได้แก่ function _checkWinnerAndPay(), function refund(), และ function withdraw()
 1. function _checkWinnerAndPay()
 function นี้ใช้ตัดสินผู้ชนะและโอนเงินรางวัลให้ทันที หลังจากที่ทั้งสองฝ่ายเปิดเผยตัวเลือกครบ ซึ่งทำการตรวจสอบตัวเลือกของทั้งสองฝ่ายและเปรียบเทียบว่าใครเป็นผู้ชนะตามกติกา Rock-Paper-Scissors-Lizard-Spock (5 choice)
