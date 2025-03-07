@@ -17,19 +17,13 @@
 - ลบข้อมูลผู้เล่นจาก mapping player_choice, player_not_played, และ player_commitment
 
 ### อธิบายโค้ดส่วนที่ทำการซ่อน choice และ commit
-โค้ดนี้ใช้กลไก commit-reveal scheme เพื่อป้องกันการโกง (front-running) โดยใช้ฟังก์ชัน commitChoice และ input
-1. function commitChoice(bytes32 commitmentHash)
+โค้ดนี้ใช้กลไก commit-reveal scheme เพื่อป้องกันการโกง (front-running) โดยใช้
+function commitChoice(bytes32 commitmentHash)
 ทำหน้าที่รับ commitmentHash จากผู้เล่นเพื่อซ่อนการเลือก
 - ตรวจสอบว่ามีผู้เล่น 2 คนและผู้เล่นยังไม่ได้ส่ง commitmentHash มาก่อน
 - บันทึก commitmentHash ไว้ใน mapping player_commitment
 - อัปเดตสถานะผู้เล่น โดยตั้งค่าสถานะว่าผู้เล่นนี้ส่ง commitmentHash แล้ว
 
-2. function input(uint choice, string memory randomString)
-ทำหน้าที่เปิดเผยการเลือกของผู้เล่น
-- ตรวจสอบเงื่อนไขว่ามีผู้เล่น 2 คนและผู้เล่นยังไม่ได้ส่ง input มาก่อน
-- ตรวจสอบ commitmentHash โดยคำนวณ commitmentHash ใหม่จาก choice และ randomString แล้วก็เปรียบเทียบกับ commitmentHash ที่บันทึกไว้
-- บันทึกการเลือกของผู้เล่นใน mapping player_choice
-- ตรวจสอบว่าทั้งสองฝ่ายส่ง input ครบ หากทั้งสองฝ่ายส่ง input ครบ ระบบจะเรียก _checkWinnerAndPay() เพื่อตัดสินผลแพ้-ชนะ
 
 ### อธิบายโค้ดส่วนที่จัดการกับความล่าช้าที่ผู้เล่นไม่ครบทั้งสองคนเสียที
 ใช้ function checkTimeout() ทำหน้าที่คืนเงินให้ผู้เล่นหากเกิด timeout
