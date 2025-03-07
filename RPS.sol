@@ -8,7 +8,7 @@ contract RPS {
     uint public numPlayer = 0;
     uint public reward = 0;
     uint public gameStartTime;
-    uint public gameTimeout = 3 minutes; // เวลาที่ผู้เล่นต้องเลือกก่อนจะล๊อกเงิน
+    uint public gameTimeout = 3 minutes; // เวลาที่ผู้เล่นต้อง lock ก่อนจะ lock เงิน
     mapping(address => uint) public player_choice; // 0 - Rock, 1 - Paper, 2 - Scissors, 3 - Lizard, 4 - Spock
     mapping(address => bool) public player_not_played;
     mapping(address => bytes32) public player_commitment;
@@ -16,7 +16,6 @@ contract RPS {
 
     uint public numInput = 0;
 
-    // เปลี่ยน allowedPlayers เป็น private
     address[4] private allowedPlayers = [
         0x5B38Da6a701c568545dCfcB03FcB875f56beddC4,
         0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2,
@@ -96,7 +95,6 @@ contract RPS {
             require(success0 && success1, "Transfer failed");
         }
 
-        // รีเซ็ตเกม
         resetGame();
     }
 
@@ -110,7 +108,7 @@ contract RPS {
 
         uint halfReward = reward / 2;
         if (numInput == 1 || numInput == 0) {
-            // คืนเงินครึ่งหนึ่งให้ทั้งสองผู้เล่น
+            // คืนเงินครึ่งหนึ่งให้ผู้เล่นทั้งสอง
             (bool success0, ) = account0.call{value: halfReward}("");
             (bool success1, ) = account1.call{value: reward - halfReward}("");
             require(success0 && success1, "Transfer failed");
@@ -121,7 +119,6 @@ contract RPS {
     }
 
     function resetGame() private {
-        // รีเซ็ตสถานะผู้เล่น
         for (uint i = 0; i < players.length; i++) {
             delete player_choice[players[i]];
             delete player_not_played[players[i]];
