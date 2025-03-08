@@ -43,7 +43,7 @@ contract RPS {
         player_not_played[msg.sender] = true;
         players.push(msg.sender);
         numPlayer++;
-        // Set game start time only when both players are added
+        // ตั้งเวลาเริ่มเกม เมื่อมีการเพิ่มผู้เล่นทั้งสอง
         if (numPlayer == 2) {
             gameStartTime = block.timestamp;
         }
@@ -56,14 +56,15 @@ contract RPS {
         player_not_played[msg.sender] = false;
     }
 
-    function input(uint choice, string memory randomString) public {
+    function reveal(bytes32 revealHash, uint choice) public {
         require(numPlayer == 2, "Two players are required to start the game");
         require(!player_not_played[msg.sender], "Player has not committed yet");
         require(choice >= 0 && choice <= 4, "Invalid choice (0-4 expected)");
         
-        bytes32 commitmentHash = keccak256(abi.encodePacked(randomString, choice));
-        require(commitmentHash == player_commitment[msg.sender], "Commitment hash does not match");
+        // ตรวจสอบว่า revealHash ตรงกับ commitmentHash ที่ commit ไว้
+        require(revealHash == player_commitment[msg.sender], "Commitment hash does not match");
 
+        // บันทึก choice ของผู้เล่น
         player_choice[msg.sender] = choice;
         numInput++;
 
