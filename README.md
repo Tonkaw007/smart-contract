@@ -32,8 +32,9 @@ function commitChoice(bytes32 commitmentHash)
 - รีเซ็ตเกม เรียก resetGame() เพื่อล้างข้อมูลเก่าและเริ่มรอบใหม่
 
 ### อธิบายโค้ดส่วนทำการ reveal และนำ choice มาตัดสินผู้ชนะ 
-โดยใช้ 3 ฟังก์ชันหลัก คือ function input(uint choice, string memory randomString) และ function _checkWinnerAndPay()
-1. function input(uint choice, string memory randomString)
+โดยใช้ 3 ฟังก์ชันหลัก คือ function reveal(bytes32 revealHash, uint choice) และ function _checkWinnerAndPay()
+1. function reveal(bytes32 revealHash, uint choice)
+//แก้
 ทำหน้าที่เปิดเผยการเลือกของผู้เล่น
 - ตรวจสอบเงื่อนไขว่ามีผู้เล่น 2 คนและผู้เล่นยังไม่ได้ส่ง input มาก่อน
 - ตรวจสอบ commitmentHash โดยคำนวณ commitmentHash ใหม่จาก choice และ randomString แล้วก็เปรียบเทียบกับ commitmentHash ที่บันทึกไว้
