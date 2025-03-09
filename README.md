@@ -154,10 +154,9 @@ function resetGame() private {
     bytes32 storedCommit = player_commitment[msg.sender];
 
     if (commitReveal.getHash(revealHash) != storedCommit) {
-
         revert("Commitment hash does not match, try again");
-    }
-
+        }
+        
     require(!player_revealed[msg.sender], "Already revealed correctly");
 
     player_revealHash[msg.sender] = revealHash;
@@ -169,7 +168,6 @@ function resetGame() private {
     numInput++;
 
     if (numInput == 2) {
-
         _checkWinnerAndPay();
     }
 }
