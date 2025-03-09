@@ -14,16 +14,19 @@ uint p1Choice = player_choice[players[1]];
 ถ้าผู้เล่น 1 ชนะ ก็จะโอนเงินให้ผู้เล่น 1 แทน
 - การโอนเงินรางวัลให้ผู้ชนะ:
 เมื่อผลการเล่นตัดสินแล้ว ฟังก์ชันจะทำการโอนเงินให้แก่ผู้ชนะโดยใช้ call:
+
 uint rewardForPlayer0 = reward;
 (bool success0, ) = payable(players[0]).call{value: rewardForPlayer0}("");
 require(success0, "Transfer failed for Player 0");
 
 ในกรณีที่ผู้เล่น 0 ชนะ ระบบจะโอนรางวัลทั้งหมดไปให้ผู้เล่น 0
 หากเสมอ จะทำการแบ่งรางวัลให้ทั้งสองฝ่าย:
+
 uint rewardForEach = reward / 2;
 (bool success0, ) = payable(players[0]).call{value: rewardForEach}("");
 (bool success1, ) = payable(players[1]).call{value: rewardForEach}("");
 require(success0 && success1, "Transfer failed");
+
 - การรีเซ็ตเกม: เมื่อการโอนเงินเสร็จสมบูรณ์ ฟังก์ชันจะทำการรีเซ็ตเกม เพื่อให้พร้อมสำหรับการเริ่มต้นใหม่ โดยเรียกใช้ฟังก์ชัน resetGame()
 
 2. function checkTimeout() ทำการตรวจสอบว่าเกมมีผู้เล่น 2 คนและตรวจสอบว่าเวลา timeout เกิดขึ้นแล้ว (ผ่านไป 1 นาที) โดยจะมีเงื่อนไขดังนี้:
