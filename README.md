@@ -14,7 +14,6 @@ uint p1Choice = player_choice[players[1]];
 ถ้าผู้เล่น 1 ชนะ ก็จะโอนเงินให้ผู้เล่น 1 แทน
 - การโอนเงินรางวัลให้ผู้ชนะ:
 เมื่อผลการเล่นตัดสินแล้ว ฟังก์ชันจะทำการโอนเงินให้แก่ผู้ชนะโดยใช้ call:
-
 uint rewardForPlayer0 = reward;
 (bool success0, ) = payable(players[0]).call{value: rewardForPlayer0}("");
 require(success0, "Transfer failed for Player 0");
