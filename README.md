@@ -97,13 +97,21 @@ function checkTimeout() public {
 ซึ่งจะลบข้อมูลต่างๆ ของผู้เล่นจาก mapping ที่เกี่ยวข้อง เช่น player_choice, player_commitment, player_revealHash  ทำให้เกมพร้อมสำหรับการเริ่มใหม่
 
 function resetGame() private {
+
         for (uint i = 0; i < players.length; i++) {
+
             delete player_choice[players[i]];
+
             delete player_not_played[players[i]];
+
             delete player_commitment[players[i]];
+
             delete player_revealHash[players[i]];
+
             delete player_revealed[players[i]];
+
         }
+
 
         numPlayer = 0;
         reward = 0;
@@ -148,8 +156,6 @@ function resetGame() private {
     if (commitReveal.getHash(revealHash) != storedCommit) {
 
         revert("Commitment hash does not match, try again");
-
-
     }
 
     require(!player_revealed[msg.sender], "Already revealed correctly");
@@ -165,9 +171,7 @@ function resetGame() private {
     if (numInput == 2) {
 
         _checkWinnerAndPay();
-
     }
-
 }
 
 ซึ่งผู้เล่นสามารถ เปิดเผย (reveal) ตัวเลือกของเขาได้หลังจากที่ได้ commit ไปแล้ว
