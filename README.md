@@ -2,8 +2,10 @@
 โค้ดนี้ใช้ 3 ฟังก์ชันหลัก คือ function _checkWinnerAndPay(), function checkTimeout() และ function resetGame():
 1. function _checkWinnerAndPay()ทำหน้าที่ตัดสินผู้ชนะและโอนเงินให้แก่ผู้ชนะทันทีหลังจากที่ผู้เล่นทั้งสองได้เปิดเผยตัวเลือกแล้ว
 - ดึงข้อมูลตัวเลือกของผู้เล่น: ฟังก์ชันนี้จะเริ่มต้นโดยการดึงข้อมูลการเลือก (choice) ของผู้เล่นทั้งสองคนจาก player_choice:
+
 uint p0Choice = player_choice[players[0]];
 uint p1Choice = player_choice[players[1]];
+
 ตัวแปร p0Choice และ p1Choice เก็บค่าการเลือกของผู้เล่นแต่ละคน ซึ่งเป็นตัวเลือกจากเกม 0 = Rock, 1 = Paper, 2 = Scissors, 3 = Lizard, 4 = Spock
 - การตัดสินผู้ชนะ: ใช้กฎการตัดสินเกมตามตัวเลือกที่ผู้เล่นเลือก โดยใช้เงื่อนไข if-else เพื่อตรวจสอบว่าใครชนะ:
 ผู้เล่น 0 (Player 0) หรือคนแรก จะชนะ ถ้าเลือกตัวเลือกที่ชนะตัวเลือกของผู้เล่น 1 (Player 1) หรือคนที่ 2
@@ -12,9 +14,11 @@ uint p1Choice = player_choice[players[1]];
 ถ้าผู้เล่น 1 ชนะ ก็จะโอนเงินให้ผู้เล่น 1 แทน
 - การโอนเงินรางวัลให้ผู้ชนะ:
 เมื่อผลการเล่นตัดสินแล้ว ฟังก์ชันจะทำการโอนเงินให้แก่ผู้ชนะโดยใช้ call:
+
 uint rewardForPlayer0 = reward;
 (bool success0, ) = payable(players[0]).call{value: rewardForPlayer0}("");
 require(success0, "Transfer failed for Player 0");
+
 ในกรณีที่ผู้เล่น 0 ชนะ ระบบจะโอนรางวัลทั้งหมดไปให้ผู้เล่น 0
 หากเสมอ จะทำการแบ่งรางวัลให้ทั้งสองฝ่าย:
 uint rewardForEach = reward / 2;
