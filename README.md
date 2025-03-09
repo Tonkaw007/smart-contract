@@ -23,7 +23,9 @@ require(success0, "Transfer failed for Player 0");
 หากเสมอ จะทำการแบ่งรางวัลให้ทั้งสองฝ่าย:
 
 uint rewardForEach = reward / 2;
+
 (bool success0, ) = payable(players[0]).call{value: rewardForEach}("");
+
 (bool success1, ) = payable(players[1]).call{value: rewardForEach}("");
 
 require(success0 && success1, "Transfer failed");
