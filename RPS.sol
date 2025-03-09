@@ -10,7 +10,7 @@ contract RPS {
     uint public numPlayer = 0;
     uint public reward = 0;
     uint public gameStartTime;
-    uint public gameTimeout = 3 minutes;
+    uint public gameTimeout = 1 minutes;
     mapping(address => uint) public player_choice;
     mapping(address => bool) public player_not_played;
     mapping(address => bytes32) public player_commitment;
@@ -84,26 +84,40 @@ contract RPS {
     }
 
     function _checkWinnerAndPay() private {
-        uint p0Choice = player_choice[players[0]];
-        uint p1Choice = player_choice[players[1]];
-        address payable account0 = payable(players[0]);
-        address payable account1 = payable(players[1]);
+    uint p0Choice = player_choice[players[0]];
+    uint p1Choice = player_choice[players[1]];
+    address payable account0 = payable(players[0]);
+    address payable account1 = payable(players[1]);
 
-        if ((p0Choice + 1) % 5 == p1Choice || (p0Choice + 3) % 5 == p1Choice) {
-            (bool success1, ) = account1.call{value: reward}("");
-            require(success1, "Transfer failed");
-        } else if ((p1Choice + 1) % 5 == p0Choice || (p1Choice + 3) % 5 == p0Choice) {
-            (bool success0, ) = account0.call{value: reward}("");
-            require(success0, "Transfer failed");
-        } else {
-            uint halfReward = reward / 2;
-            (bool success0, ) = account0.call{value: halfReward}("");
-            (bool success1, ) = account1.call{value: reward - halfReward}("");
-            require(success0 && success1, "Transfer failed");
-        }
-
-        resetGame();
+    // กฎเกม: ผู้เล่นที่เลือกชนะ
+    if ((p0Choice == 0 && (p1Choice == 2 || p1Choice == 3)) ||
+        (p0Choice == 1 && (p1Choice == 0 || p1Choice == 4)) ||
+        (p0Choice == 2 && (p1Choice == 1 || p1Choice == 3)) ||
+        (p0Choice == 3 && (p1Choice == 1 || p1Choice == 4)) ||
+        (p0Choice == 4 && (p1Choice == 0 || p1Choice == 2))) {
+        (bool success0, ) = account0.call{value: reward}("");
+        require(success0, "Transfer failed");
+    } 
+    // กฎเกม: ผู้เล่นที่แพ้
+    else if ((p1Choice == 0 && (p0Choice == 2 || p0Choice == 3)) ||
+             (p1Choice == 1 && (p0Choice == 0 || p0Choice == 4)) ||
+             (p1Choice == 2 && (p0Choice == 1 || p0Choice == 3)) ||
+             (p1Choice == 3 && (p0Choice == 1 || p0Choice == 4)) ||
+             (p1Choice == 4 && (p0Choice == 0 || p0Choice == 2))) {
+        (bool success1, ) = account1.call{value: reward}("");
+        require(success1, "Transfer failed");
+    } 
+    // เสมอกัน
+    else {
+        uint halfReward = reward / 2;
+        (bool success0, ) = account0.call{value: halfReward}("");
+        (bool success1, ) = account1.call{value: reward - halfReward}("");
+        require(success0 && success1, "Transfer failed");
     }
+
+    resetGame();
+}
+
 
     function checkTimeout() public {
         require(numPlayer == 2, "Game must have two players");
