@@ -71,6 +71,7 @@ function commitChoice(bytes32 commitmentHash) public {
     player_commitment[msg.sender] = commitmentHash;
     player_not_played[msg.sender] = false;
 }
+
 กลไกนี้จะทำให้ผู้เล่นไม่สามารถเปลี่ยนตัวเลือกได้หลังจากที่ทำการ commit แล้ว ซึ่งทำให้ไม่มีการโกง เช่น การเปลี่ยนตัวเลือกหลังจากเห็นตัวเลือกของฝ่ายตรงข้าม
 
 ### อธิบายโค้ดส่วนที่จัดการกับความล่าช้าที่ผู้เล่นไม่ครบทั้งสองคนเสียที
