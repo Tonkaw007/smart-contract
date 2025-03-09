@@ -48,6 +48,7 @@ require(success0 && success1, "Transfer failed");
 
 
 function resetGame() private {
+
         for (uint i = 0; i < players.length; i++) {
             delete player_choice[players[i]];
             delete player_not_played[players[i]];
@@ -67,8 +68,8 @@ function resetGame() private {
 โค้ดนี้ใช้กลไก commit-reveal scheme เพื่อป้องกันการโกง (front-running) โดยใช้
 function commitChoice(bytes32 commitmentHash): ฟังก์ชันนี้รับ commitmentHash จากผู้เล่นซึ่งคำนวณจากการเลือกของผู้เล่นและข้อมูลสุ่ม โดยตรวจสอบว่าเกมมีผู้เล่นครบ 2 คน และผู้เล่นนั้นยังไม่ได้ส่ง commitmentHash ถ้าผู้เล่นยังไม่เคยส่ง commitmentHash มาก่อน ก็จะบันทึก commitmentHash ลงใน player_commitment และเปลี่ยนสถานะผู้เล่นใน player_not_played เป็น false เพื่อบอกว่าได้ทำการ commit แล้ว
 
-
 function commitChoice(bytes32 commitmentHash) public {
+    
     require(numPlayer == 2, "Two players are required to start the game");
     require(player_not_played[msg.sender], "Player has already committed");
     player_commitment[msg.sender] = commitmentHash;
@@ -82,8 +83,8 @@ function commitChoice(bytes32 commitmentHash) public {
 - ตรวจสอบเงื่อนไข timeout ว่าเกมมีผู้เล่น 2 คนและเวลา timeout เกิดขึ้นแล้ว
 - ถ้าผู้เล่นไม่ครบ หรือมีผู้เล่นเพียงคนเดียวที่ได้ทำการเปิดเผยตัวเลือก หรือไม่ส่งข้อมูลเลย ระบบจะคืนเงินให้ทั้งสองฝ่าย โดยการแบ่งรางวัลครึ่งหนึ่งให้กับผู้เล่นแต่ละคน
 
-
 function checkTimeout() public {
+
     require(numPlayer == 2, "Game must have two players");
     require(gameStartTime != 0, "Game has not started yet");
     require(block.timestamp >= gameStartTime + gameTimeout, "Game timeout has not yet occurred");
@@ -110,8 +111,8 @@ function checkTimeout() public {
 ถ้าการเปิดเผยสำเร็จ จะบันทึกการเลือกของผู้เล่นใน player_choice และเปลี่ยนสถานะของ player_revealed เป็น true
 เมื่อผู้เล่นทั้งสองเปิดเผยข้อมูลครบแล้ว ฟังก์ชันจะเรียก _checkWinnerAndPay() เพื่อตัดสินผลแพ้-ชนะ
 
-
 function reveal(bytes32 revealHash, uint choice) public {
+
     require(numPlayer == 2, "Two players are required to start the game");
     require(!player_not_played[msg.sender], "Player has not committed yet");
     require(choice >= 0 && choice <= 4, "Invalid choice (0-4 expected)");
