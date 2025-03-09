@@ -1,54 +1,46 @@
 ### อธิบายโค้ดที่ป้องกันการ lock เงินไว้ใน contract
-โค้ดนี้ใช้ 3 ฟังก์ชันหลัก คือ function _checkWinnerAndPay(), function checkTimeout() และ function resetGame():
-1. function _checkWinnerAndPay()    ทำหน้าที่ตัดสินผู้ชนะและโอนเงินให้แก่ผู้ชนะทันทีหลังจากที่ผู้เล่นทั้งสองได้เปิดเผยตัวเลือกแล้ว
-- ดึงข้อมูลตัวเลือกของผู้เล่น: ฟังก์ชันนี้จะเริ่มต้นโดยการดึงข้อมูลการเลือก (choice) ของผู้เล่นทั้งสองคนจาก  player_choice:
+โค้ดนี้ใช้ 2 ฟังก์ชันหลัก คือ function checkTimeout() และ function resetGame()
 
-uint p0Choice = player_choice[players[0]];
+1. ฟังก์ชัน checkTimeout: ฟังก์ชันนี้จะตรวจสอบว่าเกมได้เริ่มต้นแล้วและเวลาที่กำหนดไว้สำหรับเกม (gameTimeout) ได้หมดลงหรือไม่ ซึ่ง timeout เกิดขึ้นเมื่อมีเวลาผ่านไปมากกว่าหรือเท่ากับเวลาที่กำหนด ( 1 นาที) ใน gameTimeout
+หากเวลาหมดลงและยังมีผู้เล่นไม่ครบทั้งสองคน (numInput == 1 หรือ numInput == 0) ระบบจะจ่ายเงินรางวัลครึ่งหนึ่งให้กับผู้เล่นแต่ละคนและทำการ reset เกม
 
-uint p1Choice = player_choice[players[1]];
+function checkTimeout() public {
+    require(numPlayer == 2, "Game must have two players");
+    require(gameStartTime != 0, "Game has not started yet");
+    require(block.timestamp >= gameStartTime + gameTimeout, "Game timeout has not yet occurred");
 
-ตัวแปร p0Choice และ p1Choice เก็บค่าการเลือกของผู้เล่นแต่ละคน ซึ่งเป็นตัวเลือกจากเกม 0 = Rock, 1 = Paper, 2 = Scissors, 3 = Lizard, 4 = Spock
-- การตัดสินผู้ชนะ: ใช้กฎการตัดสินเกมตามตัวเลือกที่ผู้เล่นเลือก โดยใช้เงื่อนไข if-else เพื่อตรวจสอบว่าใครชนะ:
-ผู้เล่น 0 (Player 0) หรือคนแรก จะชนะ ถ้าเลือกตัวเลือกที่ชนะตัวเลือกของผู้เล่น 1 (Player 1) หรือคนที่ 2
-ซึ่งกฎการชนะจะเป็นไปตามตัวเลือกที่ผู้เล่นทั้งสองเลือก เช่น Rock (0) ชนะ Scissors (2) และ Lizard (3)
-ถ้าผลการเลือกของทั้งสองฝ่ายเหมือนกัน (เสมอ) จะทำการแบ่งรางวัลให้ทั้งสองฝ่าย
-ถ้าผู้เล่น 1 ชนะ ก็จะโอนเงินให้ผู้เล่น 1 แทน
-- การโอนเงินรางวัลให้ผู้ชนะ:
- เมื่อผลการเล่นตัดสินแล้ว ฟังก์ชันจะทำการโอนเงินให้แก่ผู้ชนะโดยใช้ call:
+    address payable account0 = payable(players[0]);
+    address payable account1 = payable(players[1]);
+    uint halfReward = reward / 2;
+    if (numInput == 1 || numInput == 0) {
+        (bool success0, ) = account0.call{value: halfReward}("");
+        (bool success1, ) = account1.call{value: reward - halfReward}("");
+        require(success0 && success1, "Transfer failed");
+    }
 
-uint rewardForPlayer0 = reward;
+    resetGame();
+}
 
-(bool success0, ) = payable(players[0]).call{value: rewardForPlayer0}("");
-
-require(success0, "Transfer failed for Player 0");
-
-ในกรณีที่ผู้เล่น 0 ชนะ ระบบจะโอนรางวัลทั้งหมดไปให้ผู้เล่น 0
-หากเสมอ จะทำการแบ่งรางวัลให้ทั้งสองฝ่าย:
-
-uint rewardForEach = reward / 2;
-
-(bool success0, ) = payable(players[0]).call{value: rewardForEach}("");
-
-(bool success1, ) = payable(players[1]).call{value: rewardForEach}("");
-
-require(success0 && success1, "Transfer failed");
-
-- การรีเซ็ตเกม: เมื่อการโอนเงินเสร็จสมบูรณ์ ฟังก์ชันจะทำการรีเซ็ตเกม เพื่อให้พร้อมสำหรับการเริ่มต้นใหม่ โดยเรียกใช้ฟังก์ชัน resetGame()
-
-
-2. function checkTimeout() ทำการตรวจสอบว่าเกมมีผู้เล่น 2 คนและตรวจสอบว่าเวลา timeout เกิดขึ้นแล้ว (ผ่านไป 1 นาที) โดยจะมีเงื่อนไขดังนี้:
-- ต้องมีผู้เล่น 2 คน ถ้ามีผู้เล่นน้อยกว่า 2 คน จะไม่สามารถดำเนินเกมได้
-- ต้องเป็นเวลาหมด (timeout): จะต้องมีเวลาผ่านไปมากกว่าหรือเท่ากับเวลาที่กำหนด ( 1 นาที) ใน gameTimeout หลังจากที่เกมเริ่มต้น (gameStartTime)
-- การคืนเงินให้ผู้เล่น ถ้ามีผู้เล่นเพียงคนเดียวที่ทำการเลือกแล้ว หรือไม่มีผู้เล่นที่ทำการเลือกเลย ก็จะคืนเงินครึ่งหนึ่งให้ผู้เล่นแต่ละคน (reward / 2)
-- การโอนเงิน: เงินจะถูกโอนไปยังผู้เล่นทั้งสองคน โดยจะใช้ฟังก์ชัน call{value:} เพื่อโอนเงินกลับไปยังผู้เล่น:
-(bool success0, ) = account0.call{value: halfReward}("");
-(bool success1, ) = account1.call{value: reward - halfReward}("");
-require(success0 && success1, "Transfer failed");
-- การรีเซ็ตเกม: เมื่อการโอนเงินเสร็จสมบูรณ์ ฟังก์ชันจะทำการรีเซ็ตเกม เพื่อให้พร้อมสำหรับการเริ่มต้นใหม่ โดยเรียกใช้ฟังก์ชัน resetGame()
-
-
-3. function resetGame() ใช้รีเซ็ตสถานะของเกมหลังจากที่เกมจบหรือเกิด timeout
+2. function resetGame() ใช้รีเซ็ตสถานะของเกมหลังจากที่เกมจบหรือเกิด timeout
 ซึ่งจะลบข้อมูลต่างๆ ของผู้เล่นจาก mapping ที่เกี่ยวข้อง เช่น player_choice, player_commitment, player_revealHash และ player_revealed ทำให้เกมพร้อมสำหรับการเริ่มใหม่
+
+function resetGame() private {
+    for (uint i = 0; i < players.length; i++) {
+        delete player_choice[players[i]];
+        delete player_not_played[players[i]];
+        delete player_commitment[players[i]];
+        delete player_revealHash[players[i]];
+        delete player_revealed[players[i]];
+    }
+
+    numPlayer = 0;
+    reward = 0;
+    numInput = 0;
+    gameStartTime = 0;
+    players = new address[](0);
+}
+
+
 
 
 function resetGame() private {
@@ -70,7 +62,53 @@ function resetGame() private {
 
 ### อธิบายโค้ดส่วนที่ทำการซ่อน choice และ commit
 โค้ดนี้ใช้กลไก commit-reveal scheme เพื่อป้องกันการโกง (front-running) โดยใช้
-function commitChoice(bytes32 commitmentHash): ฟังก์ชันนี้รับ commitmentHash จากผู้เล่น ซึ่งคำนวณจากการเลือกของผู้เล่นและข้อมูลสุ่ม โดยตรวจสอบว่าเกมมีผู้เล่นครบ 2 คน และผู้เล่นนั้นยังไม่ได้ส่ง commitmentHash ถ้าผู้เล่นยังไม่เคยส่ง commitmentHash มาก่อน ก็จะบันทึก commitmentHash ลงใน player_commitment และเปลี่ยนสถานะผู้เล่นใน player_not_played เป็น false เพื่อบอกว่าได้ทำการ commit แล้ว
+function commitChoice(bytes32 commitmentHash) 
+- การตรวจสอบจำนวนผู้เล่น:
+
+require(numPlayer == 2, "Two players are required to start the game");
+
+เงื่อนไขนี้ ใช้ตรวจสอบว่าในเกมมีผู้เล่นครบ 2 คนแล้วหรือไม่ ถ้ายังมีผู้เล่นไม่ครบ 2 คน ระบบจะไม่อนุญาตให้ทำการ commit
+
+- ตรวจสอบสถานะของผู้เล่น:
+
+require(player_not_played[msg.sender], "Player has already committed");
+
+โดยจะตรวจสอบว่า ผู้เล่นยังไม่ได้ทำการ commit หรือยังไม่ได้เลือกมาก่อน ถ้าผู้เล่นนั้นเคย commit ไปแล้ว ระบบจะไม่อนุญาตให้ commit อีก
+การบันทึก commitment:
+
+solidity
+คัดลอก
+แก้ไข
+player_commitment[msg.sender] = commitmentHash;
+หลังจากที่ผู้เล่นทำการ commit โดยการคำนวณ commitmentHash จากการเลือกของตน (และข้อมูลสุ่มเพื่อป้องกันการทำนาย) ระบบจะบันทึกค่า commitmentHash ลงใน player_commitment สำหรับผู้เล่นคนนั้น
+การเปลี่ยนสถานะของผู้เล่น:
+
+solidity
+คัดลอก
+แก้ไข
+player_not_played[msg.sender] = false;
+หลังจากที่ผู้เล่นทำการ commit เสร็จแล้ว ฟังก์ชันจะอัพเดตสถานะของผู้เล่นใน player_not_played เป็น false ซึ่งหมายความว่า "ผู้เล่นได้ทำการ commit แล้ว" และไม่สามารถทำการ commit ใหม่ได้
+3. การทำงานโดยรวม
+ผู้เล่นจะส่ง commitmentHash ซึ่งเป็นการซ่อนตัวเลือกของเขา
+ฟังก์ชันจะบันทึกค่า commitmentHash ลงในระบบและทำเครื่องหมายว่า ผู้เล่นนี้ได้ commit แล้ว
+สิ่งนี้จะป้องกันไม่ให้ผู้เล่นสามารถเห็นการเลือกของคู่แข่งก่อนที่จะทำการเลือก (การป้องกันการโกงแบบ "front-running")
+ตัวอย่าง
+สมมติว่าผู้เล่น A เลือก "Rock" และผู้เล่น B เลือก "Paper" แล้วผู้เล่นทั้งสองก็ต้องทำการ commit ตัวเลือกของตนในลักษณะของ commitmentHash ซึ่งอาจจะคำนวณโดยใช้การผสมผสานระหว่างตัวเลือกที่เลือกและข้อมูลสุ่ม เช่น:
+
+ผู้เล่น A: commitmentHash = keccak256(abi.encodePacked("Rock", "randomStringA"))
+ผู้เล่น B: commitmentHash = keccak256(abi.encodePacked("Paper", "randomStringB"))
+ฟังก์ชัน commitChoice() จะรับค่า commitmentHash จากผู้เล่น แล้วบันทึกข้อมูลนี้ในระบบ เพื่อให้ผู้เล่นไม่สามารถเปลี่ยนแปลงการเลือกของตนได้จนกว่าเกมจะมาถึงขั้นตอนการ reveal
+
+
+
+
+
+
+
+
+
+
+
 
 function commitChoice(bytes32 commitmentHash) public {
     

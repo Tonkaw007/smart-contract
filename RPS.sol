@@ -15,7 +15,7 @@ contract RPS {
     mapping(address => bool) public player_not_played;
     mapping(address => bytes32) public player_commitment;
     mapping(address => bytes32) public player_revealHash;
-    mapping(address => bool) public player_revealed; // เพิ่มตัวแปรเพื่อล็อกค่าหลัง reveal สำเร็จ
+    mapping(address => bool) public player_revealed; 
     address[] public players;
     uint public numInput = 0;
 
