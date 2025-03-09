@@ -1,6 +1,6 @@
 ### อธิบายโค้ดที่ป้องกันการ lock เงินไว้ใน contract
 โค้ดนี้ใช้ 3 ฟังก์ชันหลัก คือ function _checkWinnerAndPay(), function checkTimeout() และ function resetGame():
-1. function _checkWinnerAndPay()ทำหน้าที่ตัดสินผู้ชนะและโอนเงินให้แก่ผู้ชนะทันทีหลังจากที่ผู้เล่นทั้งสองได้เปิดเผยตัวเลือกแล้ว
+1. function _checkWinnerAndPay()    ทำหน้าที่ตัดสินผู้ชนะและโอนเงินให้แก่ผู้ชนะทันทีหลังจากที่ผู้เล่นทั้งสองได้เปิดเผยตัวเลือกแล้ว
 - ดึงข้อมูลตัวเลือกของผู้เล่น: ฟังก์ชันนี้จะเริ่มต้นโดยการดึงข้อมูลการเลือก (choice) ของผู้เล่นทั้งสองคนจาก  player_choice:
 
 uint p0Choice = player_choice[players[0]];
@@ -17,7 +17,9 @@ uint p1Choice = player_choice[players[1]];
  เมื่อผลการเล่นตัดสินแล้ว ฟังก์ชันจะทำการโอนเงินให้แก่ผู้ชนะโดยใช้ call:
 
 uint rewardForPlayer0 = reward;
+
 (bool success0, ) = payable(players[0]).call{value: rewardForPlayer0}("");
+
 require(success0, "Transfer failed for Player 0");
 
 ในกรณีที่ผู้เล่น 0 ชนะ ระบบจะโอนรางวัลทั้งหมดไปให้ผู้เล่น 0
