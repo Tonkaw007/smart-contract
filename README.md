@@ -35,7 +35,9 @@ require(success0 && success1, "Transfer failed");
 
 3. function resetGame() ใช้รีเซ็ตสถานะของเกมหลังจากที่เกมจบหรือเกิด timeout
 ซึ่งจะลบข้อมูลต่างๆ ของผู้เล่นจาก mapping ที่เกี่ยวข้อง เช่น player_choice, player_commitment, player_revealHash และ player_revealed ทำให้เกมพร้อมสำหรับการเริ่มใหม่
+
 function resetGame() private {
+
     for (uint i = 0; i < players.length; i++) {
         delete player_choice[players[i]];
         delete player_not_played[players[i]];
@@ -43,6 +45,7 @@ function resetGame() private {
         delete player_revealHash[players[i]];
         delete player_revealed[players[i]];
     }
+
     numPlayer = 0;
     reward = 0;
     numInput = 0;
