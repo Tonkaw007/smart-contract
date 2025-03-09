@@ -35,6 +35,7 @@ require(success0 && success1, "Transfer failed");
 
 - การรีเซ็ตเกม: เมื่อการโอนเงินเสร็จสมบูรณ์ ฟังก์ชันจะทำการรีเซ็ตเกม เพื่อให้พร้อมสำหรับการเริ่มต้นใหม่ โดยเรียกใช้ฟังก์ชัน resetGame()
 
+
 2. function checkTimeout() ทำการตรวจสอบว่าเกมมีผู้เล่น 2 คนและตรวจสอบว่าเวลา timeout เกิดขึ้นแล้ว (ผ่านไป 1 นาที) โดยจะมีเงื่อนไขดังนี้:
 - ต้องมีผู้เล่น 2 คน ถ้ามีผู้เล่นน้อยกว่า 2 คน จะไม่สามารถดำเนินเกมได้
 - ต้องเป็นเวลาหมด (timeout): จะต้องมีเวลาผ่านไปมากกว่าหรือเท่ากับเวลาที่กำหนด ( 1 นาที) ใน gameTimeout หลังจากที่เกมเริ่มต้น (gameStartTime)
@@ -44,6 +45,7 @@ require(success0 && success1, "Transfer failed");
 (bool success1, ) = account1.call{value: reward - halfReward}("");
 require(success0 && success1, "Transfer failed");
 - การรีเซ็ตเกม: เมื่อการโอนเงินเสร็จสมบูรณ์ ฟังก์ชันจะทำการรีเซ็ตเกม เพื่อให้พร้อมสำหรับการเริ่มต้นใหม่ โดยเรียกใช้ฟังก์ชัน resetGame()
+
 
 3. function resetGame() ใช้รีเซ็ตสถานะของเกมหลังจากที่เกมจบหรือเกิด timeout
 ซึ่งจะลบข้อมูลต่างๆ ของผู้เล่นจาก mapping ที่เกี่ยวข้อง เช่น player_choice, player_commitment, player_revealHash และ player_revealed ทำให้เกมพร้อมสำหรับการเริ่มใหม่
@@ -68,7 +70,7 @@ function resetGame() private {
 
 ### อธิบายโค้ดส่วนที่ทำการซ่อน choice และ commit
 โค้ดนี้ใช้กลไก commit-reveal scheme เพื่อป้องกันการโกง (front-running) โดยใช้
-function commitChoice(bytes32 commitmentHash): ฟังก์ชันนี้รับ commitmentHash จากผู้เล่นซึ่งคำนวณจากการเลือกของผู้เล่นและข้อมูลสุ่ม โดยตรวจสอบว่าเกมมีผู้เล่นครบ 2 คน และผู้เล่นนั้นยังไม่ได้ส่ง commitmentHash ถ้าผู้เล่นยังไม่เคยส่ง commitmentHash มาก่อน ก็จะบันทึก commitmentHash ลงใน player_commitment และเปลี่ยนสถานะผู้เล่นใน player_not_played เป็น false เพื่อบอกว่าได้ทำการ commit แล้ว
+function commitChoice(bytes32 commitmentHash): ฟังก์ชันนี้รับ commitmentHash จากผู้เล่น ซึ่งคำนวณจากการเลือกของผู้เล่นและข้อมูลสุ่ม โดยตรวจสอบว่าเกมมีผู้เล่นครบ 2 คน และผู้เล่นนั้นยังไม่ได้ส่ง commitmentHash ถ้าผู้เล่นยังไม่เคยส่ง commitmentHash มาก่อน ก็จะบันทึก commitmentHash ลงใน player_commitment และเปลี่ยนสถานะผู้เล่นใน player_not_played เป็น false เพื่อบอกว่าได้ทำการ commit แล้ว
 
 function commitChoice(bytes32 commitmentHash) public {
     
