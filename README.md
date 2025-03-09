@@ -47,6 +47,7 @@ require(success0 && success1, "Transfer failed");
 ซึ่งจะลบข้อมูลต่างๆ ของผู้เล่นจาก mapping ที่เกี่ยวข้อง เช่น player_choice, player_commitment, player_revealHash และ player_revealed ทำให้เกมพร้อมสำหรับการเริ่มใหม่
 
 function resetGame() private {
+    
         for (uint i = 0; i < players.length; i++) {
             delete player_choice[players[i]];
             delete player_not_played[players[i]];
@@ -67,6 +68,7 @@ function resetGame() private {
 function commitChoice(bytes32 commitmentHash): ฟังก์ชันนี้รับ commitmentHash จากผู้เล่นซึ่งคำนวณจากการเลือกของผู้เล่นและข้อมูลสุ่ม โดยตรวจสอบว่าเกมมีผู้เล่นครบ 2 คน และผู้เล่นนั้นยังไม่ได้ส่ง commitmentHash ถ้าผู้เล่นยังไม่เคยส่ง commitmentHash มาก่อน ก็จะบันทึก commitmentHash ลงใน player_commitment และเปลี่ยนสถานะผู้เล่นใน player_not_played เป็น false เพื่อบอกว่าได้ทำการ commit แล้ว
 
 function commitChoice(bytes32 commitmentHash) public {
+
     require(numPlayer == 2, "Two players are required to start the game");
     require(player_not_played[msg.sender], "Player has already committed");
     player_commitment[msg.sender] = commitmentHash;
@@ -81,6 +83,7 @@ function commitChoice(bytes32 commitmentHash) public {
 - ถ้าผู้เล่นไม่ครบ หรือมีผู้เล่นเพียงคนเดียวที่ได้ทำการเปิดเผยตัวเลือก หรือไม่ส่งข้อมูลเลย ระบบจะคืนเงินให้ทั้งสองฝ่าย โดยการแบ่งรางวัลครึ่งหนึ่งให้กับผู้เล่นแต่ละคน
 
 function checkTimeout() public {
+
     require(numPlayer == 2, "Game must have two players");
     require(gameStartTime != 0, "Game has not started yet");
     require(block.timestamp >= gameStartTime + gameTimeout, "Game timeout has not yet occurred");
@@ -108,6 +111,7 @@ function checkTimeout() public {
 เมื่อผู้เล่นทั้งสองเปิดเผยข้อมูลครบแล้ว ฟังก์ชันจะเรียก _checkWinnerAndPay() เพื่อตัดสินผลแพ้-ชนะ
 
 function reveal(bytes32 revealHash, uint choice) public {
+
     require(numPlayer == 2, "Two players are required to start the game");
     require(!player_not_played[msg.sender], "Player has not committed yet");
     require(choice >= 0 && choice <= 4, "Invalid choice (0-4 expected)");
