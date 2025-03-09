@@ -12,7 +12,7 @@
     address payable account1 = payable(players[1]);
 
 
-    // ผู้เล่นที่เลือกชนะ
+    // ผู้เล่นที่ชนะ
 
     if ((p0Choice == 0 && (p1Choice == 2 || p1Choice == 3)) ||
 

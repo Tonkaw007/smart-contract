@@ -90,7 +90,7 @@ contract RPS {
     address payable account0 = payable(players[0]);
     address payable account1 = payable(players[1]);
 
-    // กฎเกม: ผู้เล่นที่เลือกชนะ
+    // กฎเกม: ผู้เล่นที่ชนะ
     if ((p0Choice == 0 && (p1Choice == 2 || p1Choice == 3)) ||
         (p0Choice == 1 && (p1Choice == 0 || p1Choice == 4)) ||
         (p0Choice == 2 && (p1Choice == 1 || p1Choice == 3)) ||
