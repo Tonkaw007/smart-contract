@@ -26,6 +26,7 @@ contract RPS {
         0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB
     ];
 
+// Constructor: รับที่อยู่ของ contract CommitReveal และเก็บไว้ในตัวแปร commitReveal
     constructor(address _commitRevealAddress) {
         commitReveal = CommitReveal(_commitRevealAddress);
     }
