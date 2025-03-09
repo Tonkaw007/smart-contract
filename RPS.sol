@@ -5,15 +5,18 @@ import "./CommitReveal.sol";
 import "./TimeUnit.sol";
 
 contract RPS {
+    CommitReveal public commitReveal;
+
     uint public numPlayer = 0;
     uint public reward = 0;
     uint public gameStartTime;
-    uint public gameTimeout = 3 minutes; // เวลาที่ผู้เล่นต้อง lock ก่อนจะ lock เงิน
-    mapping(address => uint) public player_choice; // 0 - Rock, 1 - Paper, 2 - Scissors, 3 - Lizard, 4 - Spock
+    uint public gameTimeout = 3 minutes;
+    mapping(address => uint) public player_choice;
     mapping(address => bool) public player_not_played;
     mapping(address => bytes32) public player_commitment;
+    mapping(address => bytes32) public player_revealHash;
+    mapping(address => bool) public player_revealed; // เพิ่มตัวแปรเพื่อล็อกค่าหลัง reveal สำเร็จ
     address[] public players;
-
     uint public numInput = 0;
 
     address[4] private allowedPlayers = [
@@ -22,6 +25,10 @@ contract RPS {
         0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db,
         0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB
     ];
+
+    constructor(address _commitRevealAddress) {
+        commitReveal = CommitReveal(_commitRevealAddress);
+    }
 
     function isAllowedPlayer(address player) internal view returns (bool) {
         for (uint i = 0; i < allowedPlayers.length; i++) {
@@ -43,7 +50,6 @@ contract RPS {
         player_not_played[msg.sender] = true;
         players.push(msg.sender);
         numPlayer++;
-        // ตั้งเวลาเริ่มเกม เมื่อมีการเพิ่มผู้เล่นทั้งสอง
         if (numPlayer == 2) {
             gameStartTime = block.timestamp;
         }
@@ -60,12 +66,16 @@ contract RPS {
         require(numPlayer == 2, "Two players are required to start the game");
         require(!player_not_played[msg.sender], "Player has not committed yet");
         require(choice >= 0 && choice <= 4, "Invalid choice (0-4 expected)");
-        
-        // ตรวจสอบว่า revealHash ตรงกับ commitmentHash ที่ commit ไว้
-        require(revealHash == player_commitment[msg.sender], "Commitment hash does not match");
 
-        // บันทึก choice ของผู้เล่น
+        bytes32 storedCommit = player_commitment[msg.sender];
+        if (commitReveal.getHash(revealHash) != storedCommit) {
+            revert("Commitment hash does not match, try again");
+        }
+
+        require(!player_revealed[msg.sender], "Already revealed correctly");
+        player_revealHash[msg.sender] = revealHash;
         player_choice[msg.sender] = choice;
+        player_revealed[msg.sender] = true;
         numInput++;
 
         if (numInput == 2) {
@@ -79,17 +89,13 @@ contract RPS {
         address payable account0 = payable(players[0]);
         address payable account1 = payable(players[1]);
 
-        // ตรวจสอบผลลัพธ์ของเกม RPSLS
         if ((p0Choice + 1) % 5 == p1Choice || (p0Choice + 3) % 5 == p1Choice) {
-            // Player 1 ชนะ
             (bool success1, ) = account1.call{value: reward}("");
             require(success1, "Transfer failed");
         } else if ((p1Choice + 1) % 5 == p0Choice || (p1Choice + 3) % 5 == p0Choice) {
-            // Player 0 ชนะ
             (bool success0, ) = account0.call{value: reward}("");
             require(success0, "Transfer failed");
         } else {
-            // เสมอ, แบ่งเงินรางวัล
             uint halfReward = reward / 2;
             (bool success0, ) = account0.call{value: halfReward}("");
             (bool success1, ) = account1.call{value: reward - halfReward}("");
@@ -103,19 +109,16 @@ contract RPS {
         require(numPlayer == 2, "Game must have two players");
         require(gameStartTime != 0, "Game has not started yet");
         require(block.timestamp >= gameStartTime + gameTimeout, "Game timeout has not yet occurred");
-        
+
         address payable account0 = payable(players[0]);
         address payable account1 = payable(players[1]);
-
         uint halfReward = reward / 2;
         if (numInput == 1 || numInput == 0) {
-            // คืนเงินครึ่งหนึ่งให้ผู้เล่นทั้งสอง
             (bool success0, ) = account0.call{value: halfReward}("");
             (bool success1, ) = account1.call{value: reward - halfReward}("");
             require(success0 && success1, "Transfer failed");
         }
 
-        // รีเซ็ตสถานะของเกมหลังจากคืนเงิน
         resetGame();
     }
 
@@ -124,13 +127,14 @@ contract RPS {
             delete player_choice[players[i]];
             delete player_not_played[players[i]];
             delete player_commitment[players[i]];
+            delete player_revealHash[players[i]];
+            delete player_revealed[players[i]];
         }
 
-        // รีเซ็ตตัวแปรสถานะ
         numPlayer = 0;
         reward = 0;
         numInput = 0;
         gameStartTime = 0;
-        players = new address[](0); // รีเซ็ต array players
+        players = new address[](0);
     }
 }
