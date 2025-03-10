@@ -52,6 +52,7 @@ address[4] private allowedPlayers = [
 - numInput: จำนวนผู้เล่นที่ได้ทำการเปิดเผยตัวเลือกแล้ว
 - allowedPlayers: รายชื่อของผู้เล่นที่ได้รับอนุญาตให้เล่น (เป็นที่อยู่ Ethereum)
 
+
 2. Constructor: การเชื่อมต่อกับ contract อื่น
 
 constructor(address _commitRevealAddress) {
@@ -62,7 +63,8 @@ constructor(address _commitRevealAddress) {
 
 constructor: เมื่อ contract RPS ถูก deploy จะรับที่อยู่ของ contract CommitReveal ซึ่งเป็น contract ที่จัดการการ commit-reveal และเก็บไว้ในตัวแปร commitReveal เพื่อใช้ในภายหลัง
 
-4. function isAllowedPlayer(address player) internal view returns (bool) {
+
+3. function isAllowedPlayer(address player) internal view returns (bool) {
 
     for (uint i = 0; i < allowedPlayers.length; i++) {
 
@@ -81,7 +83,8 @@ constructor: เมื่อ contract RPS ถูก deploy จะรับที
 isAllowedPlayer: ฟังก์ชันนี้ใช้เพื่อเช็คว่าผู้เล่นที่พยายามจะเข้าร่วมเกมนั้นเป็นผู้เล่นที่ได้รับอนุญาตหรือไม่
 ใช้การ loop ตรวจสอบที่อยู่ของผู้เล่นใน allowedPlayers และถ้าผู้เล่นนั้นมีอยู่ในรายชื่อจะคืนค่า true มิฉะนั้นจะคืนค่า false
 
-5. function addPlayer() public payable {
+
+4. function addPlayer() public payable {
 
     require(numPlayer < 2, "Maximum two players are allowed");
 
@@ -118,7 +121,8 @@ isAllowedPlayer: ฟังก์ชันนี้ใช้เพื่อเช
 - players.push(msg.sender): เพิ่มผู้เล่นเข้าไปใน array ของ players
 - gameStartTime = block.timestamp: เมื่อมีผู้เล่นครบ 2 คน จะเริ่มต้นเกมโดยตั้งเวลา gameStartTime
 
-6. function commitChoice(bytes32 commitmentHash) public {
+
+5. function commitChoice(bytes32 commitmentHash) public {
 
     require(numPlayer == 2, "Two players are required to start the game");
 
@@ -134,7 +138,8 @@ isAllowedPlayer: ฟังก์ชันนี้ใช้เพื่อเช
 - commitmentHash คือค่า hash ของการเลือก ซึ่งจะเป็นตัวเลือกที่ผู้เล่นต้องการเลือกในเกม
 - ฟังก์ชันนี้จะเก็บค่า hash ของการเลือกในตัวแปร player_commitment และตั้งค่า player_not_played เป็น false เพื่อบ่งชี้ว่าผู้เล่นได้ทำการ commit แล้ว
 
-7. function reveal(bytes32 revealHash, uint choice) public {
+
+6. function reveal(bytes32 revealHash, uint choice) public {
 
     require(numPlayer == 2, "Two players are required to start the game");
 
@@ -174,7 +179,8 @@ isAllowedPlayer: ฟังก์ชันนี้ใช้เพื่อเช
 reveal: ฟังก์ชันนี้ให้ผู้เล่นเปิดเผยการเลือกของตนเองหลังจากที่ commit ไปแล้ว ผู้เล่นจะส่ง revealHash ซึ่งเป็นค่า hash ที่ใช้ในการเปิดเผยการเลือก
 ฟังก์ชันจะตรวจสอบว่า revealHash ตรงกับค่า commitmentHash ที่ผู้เล่นได้ commit ไว้ก่อนหน้านี้หรือไม่ โดยการเรียกฟังก์ชัน commitReveal.getHash(revealHash) ถ้าทุกอย่างถูกต้อง ระบบจะเก็บการเลือกของผู้เล่นใน player_choice และทำการตรวจสอบว่าผู้เล่นทั้งสองเปิดเผยการเลือกครบแล้วหรือยัง ถ้าครบจะเรียก _checkWinnerAndPay เพื่อตัดสินผลและจ่ายรางวัล
 
-8. function _checkWinnerAndPay() private {
+
+7. function _checkWinnerAndPay() private {
 
     uint p0Choice = player_choice[players[0]];
 
@@ -244,16 +250,23 @@ _checkWinnerAndPay: ฟังก์ชันนี้จะตรวจสอบ
 
 กฎของเกมคือ:
 ผู้เล่นที่เลือก Rock (0) ชนะ Scissors (2) และ Lizard (3)
-ผู้เล่นที่เลือก Paper (1) ชนะ Rock (0) และ Spock (4)
-ผู้เล่นที่เลือก Scissors (2) ชนะ Paper (1) และ Lizard (3)
-ผู้เล่นที่เลือก Lizard (3) ชนะ Paper (1) และ Spock (4)
-ผู้เล่นที่เลือก Spock (4) ชนะ Scissors (2) และ Rock (0)
-ถ้าผู้เล่นคนแรกชนะ จะโอน Ether ไปให้ผู้เล่นคนแรก
-ถ้าผู้เล่นคนที่สองชนะ จะโอน Ether ไปให้ผู้เล่นคนที่สอง
-ถ้าเสมอกัน จะมีการแบ่ง Ether ไปยังผู้เล่นทั้งสอง
-และทำการรีเซ็ตเกมหลังจากจ่ายรางวัลเสร็จ
 
-9. function checkTimeout() public {
+ผู้เล่นที่เลือก Paper (1) ชนะ Rock (0) และ Spock (4)
+
+ผู้เล่นที่เลือก Scissors (2) ชนะ Paper (1) และ Lizard (3)
+
+ผู้เล่นที่เลือก Lizard (3) ชนะ Paper (1) และ Spock (4)
+
+ผู้เล่นที่เลือก Spock (4) ชนะ Scissors (2) และ Rock (0)
+
+ถ้าผู้เล่นคนแรกชนะ จะโอน Ether ไปให้ผู้เล่นคนแรก
+
+ถ้าผู้เล่นคนที่สองชนะ จะโอน Ether ไปให้ผู้เล่นคนที่สอง
+
+ถ้าเสมอกัน จะมีการแบ่ง Ether ไปยังผู้เล่นทั้งสอง และทำการรีเซ็ตเกมหลังจากจ่ายรางวัลเสร็จ
+
+
+8. function checkTimeout() public {
 
     require(numPlayer == 2, "Game must have two players");
 
@@ -284,7 +297,9 @@ _checkWinnerAndPay: ฟังก์ชันนี้จะตรวจสอบ
 checkTimeout: ฟังก์ชันนี้จะถูกเรียกถ้าเกมเกินเวลาที่กำหนด (1 นาที)
 ถ้าผู้เล่นยังไม่เปิดเผยการเลือกครบทั้งสองคน ระบบจะคืนเงินเดิมพันครึ่งหนึ่งให้กับผู้เล่นแต่ละคน
 และทำการรีเซ็ตเกมเพื่อเริ่มเกมใหม่
-10. function resetGame() private {
+
+
+9. function resetGame() private {
 
         for (uint i = 0; i < players.length; i++) {
 
