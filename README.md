@@ -53,6 +53,7 @@ address[4] private allowedPlayers = [
 - allowedPlayers: รายชื่อของผู้เล่นที่ได้รับอนุญาตให้เล่น (เป็นที่อยู่ Ethereum)
 
 2. Constructor: การเชื่อมต่อกับ contract อื่น
+
 constructor(address _commitRevealAddress) {
 
     commitReveal = CommitReveal(_commitRevealAddress);
