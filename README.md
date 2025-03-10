@@ -59,6 +59,7 @@ constructor(address _commitRevealAddress) {
     commitReveal = CommitReveal(_commitRevealAddress);
 
 }
+
 constructor: เมื่อ contract RPS ถูก deploy จะรับที่อยู่ของ contract CommitReveal ซึ่งเป็น contract ที่จัดการการ commit-reveal และเก็บไว้ในตัวแปร commitReveal เพื่อใช้ในภายหลัง
 
 4. function isAllowedPlayer(address player) internal view returns (bool) {
