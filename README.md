@@ -1,5 +1,6 @@
 ### อธิบายโค้ดทั้งหมด
 1. การประกาศตัวแปร (State Variables)
+
 CommitReveal public commitReveal;
 
 uint public numPlayer = 0;
