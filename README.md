@@ -261,6 +261,7 @@ function reveal(bytes32 revealHash, uint choice) public {
 - ดึงค่า choice ของผู้เล่น 0 และ 1:
 
 uint p0Choice = player_choice[players[0]];
+
 uint p1Choice = player_choice[players[1]];
 
 - ใช้เงื่อนไข if-else เปรียบเทียบตัวเลือกของทั้งสองฝ่าย เพื่อตัดสินผลว่าผู้เล่น 0 หรือผู้เล่น 1 ชนะ หรือถ้าเสมอกันให้แบ่งรางวัล:
